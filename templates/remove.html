@@ -7,19 +7,17 @@
 </head>
 <body>
 <table>
-	{% for i in range(6) %}
 	<tr>
-		{% for row in data %}
+		<th>productId</th>
+		<th>productName</th>
+	</tr>
+	{% for row in data %}
+	<tr>
+		
+		<td>{{row[0]}}</td>
 		<td>
-			<a href="/removeItem?productId={{row[0]}}">
-			{% if i == 4 %}
-				<img src={{ url_for('static', filename='uploads/' + row[i]) }} id="itemImage" />
-			{% else %}
-				{{row[i]}}
-			{% endif %}
-			</a>
+			<a href="/removeItem?productId={{row[0]}}">remove</a>
 		</td>
-		{% endfor %}
 	</tr>
 	{% endfor %}
 </table>

@@ -3,145 +3,100 @@ from flask import *
 import sqlite3, hashlib, os
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine, text
 
 app = Flask(__name__)
 app.secret_key = 'random string'
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.permanent_session_lifetime = timedelta(minutes=5)
-db = SQLAlchemy(app)
+engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 
-class users(db.Model):
-    userId = db.Column(db.Integer, primary_key=True)
-    password = db.Column(db.String(144))
-    email = db.Column(db.String(144))
-    firstName = db.Column(db.String(144))
-    lastName = db.Column(db.String(144))
-
-class products(db.Model):
-    productId = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(144))
-    price = db.Column(db.Float)
-    description = db.Column(db.String(144))
-    image = db.Column(db.String(144))
-    stock = db.Column(db.Integer)
-    categoryId = db.Column(db.Integer)
-
-class kart(db.Model):
-    userId = db.Column(db.Integer, primary_key=True)
-    productId = db.Column(db.Integer)
-
-class categories(db.Model):
-    categoryId = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(144))
+def getLoginDetails():
+    with engine.connect() as conn:
+        # cur = conn.cursor()
+        if 'email' not in session:
+            loggedIn = False
+            firstName = ''
+            noOfItems = 0
+        else:
+            loggedIn = True
+            conn.execute("SELECT userId, firstName FROM users WHERE email = ?", (session['email'], ))
+            userId, firstName = conn.fetchone()
+            conn.execute("SELECT count(productId) FROM kart WHERE userId = ?", (userId, ))
+            noOfItems = conn.fetchone()[0]
+    conn.close()
+    return (loggedIn, firstName, noOfItems)
 
 @app.route("/")
 def root():
-    categoryData = categories.query.all()
-    itemData = products.query.all()   
-    return render_template('test.html', itemData=itemData, loggedIn=False, firstName='Keith', noOfItems=0, categoryData=categoryData)
-
-# def getLoginDetails():
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         if 'email' not in session:
-#             loggedIn = False
-#             firstName = ''
-#             noOfItems = 0
-#         else:
-#             loggedIn = True
-#             cur.execute("SELECT userId, firstName FROM users WHERE email = ?", (session['email'], ))
-#             userId, firstName = cur.fetchone()
-#             cur.execute("SELECT count(productId) FROM kart WHERE userId = ?", (userId, ))
-#             noOfItems = cur.fetchone()[0]
-#     conn.close()
-#     return (loggedIn, firstName, noOfItems)
-
-# @app.route("/")
-# def root():
-#     loggedIn, firstName, noOfItems = getLoginDetails()
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         cur.execute('SELECT productId, name, price, description, image, stock FROM products')
-#         itemData = cur.fetchall()
-#         cur.execute('SELECT categoryId, name FROM categories')
-#         categoryData = cur.fetchall()
-#     itemData = parse(itemData)   
-#     return render_template('home.html', itemData=itemData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
+    loggedIn, firstName, noOfItems = getLoginDetails()
+    with engine.connect() as conn:
+        # categoryData = conn.execute(text("SELECT * from categories"))
+        categoryData = conn.execute("SELECT * from categories")
+        productData = conn.execute(text("SELECT * from products"))
+        return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
     
+@app.route("/add")
+def admin():
+    with engine.connect() as conn:
+        categories = conn.execute("SELECT categoryId, name FROM categories")
+        
+    return render_template('add.html', categories=categories)
 
-# @app.route("/add")
-# def admin():
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         cur.execute("SELECT categoryId, name FROM categories")
-#         categories = cur.fetchall()
-#     conn.close()
-#     return render_template('add.html', categories=categories)
+@app.route("/addItem", methods=["GET", "POST"])
+def addItem():
+    if request.method == "POST":
+        name = request.form['name']
+        price = int(request.form['price'])
+        description = request.form['description']
+        stock = int(request.form['stock'])
+        categoryId = int(request.form['category'])
 
-# @app.route("/addItem", methods=["GET", "POST"])
-# def addItem():
-#     if request.method == "POST":
-#         name = request.form['name']
-#         price = float(request.form['price'])
-#         description = request.form['description']
-#         stock = int(request.form['stock'])
-#         categoryId = int(request.form['category'])
+        # #Uploading image procedure
+        # image = request.files['image']
+        # if image and allowed_file(image.filename):
+        #     filename = secure_filename(image.filename)
+        #     image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # imagename = filename
+        with engine.connect() as conn:
+            try:
+                conn.execute(text(f"INSERT INTO cme_database.products(productId, name, price, description, stock, categoryId) VALUES (2, '{name}', {price}, '{description}', stock, categoryId)"))
+                msg="added successfully"
+            except:
+                msg="error occurred"
+                
+                
+        conn.close()
+        print(msg)
+        return redirect(url_for('root'))
 
-#         #Uploading image procedure
-#         image = request.files['image']
-#         if image and allowed_file(image.filename):
-#             filename = secure_filename(image.filename)
-#             image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-#         imagename = filename
-#         with sqlite3.connect('database.db') as conn:
-#             try:
-#                 cur = conn.cursor()
-#                 cur.execute('''INSERT INTO products (name, price, description, image, stock, categoryId) VALUES (?, ?, ?, ?, ?, ?)''', (name, price, description, imagename, stock, categoryId))
-#                 conn.commit()
-#                 msg="added successfully"
-#             except:
-#                 msg="error occured"
-#                 conn.rollback()
-#         conn.close()
-#         print(msg)
-#         return redirect(url_for('root'))
+@app.route("/remove")
+def remove():
+    with engine.connect() as conn:
+        data = conn.execute('SELECT productId, name, price, description, image, stock FROM products')
+    conn.close()
+    return render_template('remove.html', data=data)
 
-# @app.route("/remove")
-# def remove():
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         cur.execute('SELECT productId, name, price, description, image, stock FROM products')
-#         data = cur.fetchall()
-#     conn.close()
-#     return render_template('remove.html', data=data)
-
-# @app.route("/removeItem")
-# def removeItem():
-#     productId = request.args.get('productId')
-#     with sqlite3.connect('database.db') as conn:
-#         try:
-#             cur = conn.cursor()
-#             cur.execute('DELETE FROM products WHERE productID = ?', (productId, ))
-#             conn.commit()
-#             msg = "Deleted successsfully"
-#         except:
-#             conn.rollback()
-#             msg = "Error occured"
-#     conn.close()
-#     print(msg)
-#     return redirect(url_for('root'))
+@app.route("/removeItem")
+def removeItem():
+    productId = request.args.get('productId')
+    with engine.connect() as conn:
+        try:
+            conn.execute(f'DELETE FROM cme_database.products WHERE productID = {productId}')
+            msg = "Deleted successfully"
+        except:
+            msg = "Error occurred"
+    conn.close()
+    print(msg)
+    return redirect(url_for('root'))
 
 # @app.route("/displayCategory")
 # def displayCategory():
 #         loggedIn, firstName, noOfItems = getLoginDetails()
 #         categoryId = request.args.get("categoryId")
-#         with sqlite3.connect('database.db') as conn:
-#             cur = conn.cursor()
-#             cur.execute("SELECT products.productId, products.name, products.price, products.image, categories.name FROM products, categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = ?", (categoryId, ))
+#         with engine.connect() as conn:
+#             conn.execute("SELECT products.productId, products.name, products.price, products.image, categories.name FROM products, categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = ?", (categoryId, ))
 #             data = cur.fetchall()
 #         conn.close()
 #         categoryName = data[0][4]
