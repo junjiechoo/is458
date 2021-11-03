@@ -2,46 +2,48 @@
 <html>
 <head>
 <title>Category: {{categoryName}}</title>
-<link rel="stylesheet" href={{ url_for('static', filename='css/home.css') }} />
-<link rel="stylesheet" href={{ url_for('static', filename='css/topStyle.css') }} />
+<link rel="stylesheet" href="{{ url_for('static', filename='./css/home.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='./css/topStyle.css') }}" />
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 </head>
 <body>
-<div id="title">
-	<a href="/">
-		<img id="logo" src= {{ url_for('static', filename='images/logo.png') }} />
-	</a>
-	<form>
-		<input id="searchBox" type="text" name="searchQuery">
-		<input id="searchButton" type="submit" value="Search">
-	</form>
-
-	{% if not loggedIn %}
-	<div id="signInButton">
-		<a class="link" href="/loginForm">Sign In</a>
-	</div>
-	{% else %}
-	<div class="dropdown">
-		<button class="dropbtn">Hello, <br>{{firstName}}</button>
-		<div class="dropdown-content">
-			<a href="/account/orders">Your orders</a>
-			<a href="/account/profile">Your profile</a>
-			<hr>
-			<a href="/logout">Sign Out</a>
-		</div>
-	</div>
-	{% endif %}
-	<div id="kart">
-		<a class="link" href="/cart">
-			<img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" />
-			CART {{noOfItems}}
+	<nav class="navbar navbar-light" style="background-color: #00a23b;">
+		<a href="/">
+			<!-- <img id="logo" src= {{ url_for('static', filename='images/logo.png') }} /> -->
+			<img id="logo" src="https://is458.s3.amazonaws.com/logo.png" style="height:70px; width:70px"/>
 		</a>
-	</div>
-</div>
+		<form>
+			<input id="searchBox" class="form-control" placeholder="Search" type="text" name="searchQuery">
+			<input id="searchButton" class="btn btn-outline-light" type="submit" value="Search">
+		</form>
+	
+		{% if not loggedIn %}
+		<div id="signInButton">
+			<button type="button" href="/loginForm" class="btn btn-outline-light">Sign In</button>
+		</div>
+		{% else %}
+		<div class="dropdown">
+			<button class="dropbtn">Hello, <br>{{firstName}}</button>
+			<div class="dropdown-content">
+				<a href="/account/orders">Your orders</a>
+				<a href="/account/profile">Your profile</a>
+				<hr>
+				<a href="/logout">Sign Out</a>
+			</div>
+		</div>
+		{% endif %}
+		<div id="kart">
+			<a class="kartlink" href="/cart">
+				<img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" />
+				CART {{noOfItems}}
+			</a>
+		</div>
+	</nav>
 
 <div>
-	<h2>Showing all products of Category {{categoryName}}:</h2>
+	<h2 style="margin-left: 5%; margin-top: 3%;">Showing all products of Category {{categoryName}}:</h2>
 	{% for itemData in data %}
-	<table>
+	<table style="margin-left: 5%;">
 		<tr id="productName">
 			{% for row in itemData %}
 			<td>
@@ -68,5 +70,10 @@
 	</table>
 	{% endfor %}
 </div>
+
+
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 </body>
 </html>

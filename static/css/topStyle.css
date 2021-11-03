@@ -9,24 +9,21 @@
 }
 
 #title {
-	background-color: black;
+	background-color: red;
 	display: inline-block;
 	width: 100%;
 }
 
 #searchBox {
-	height: 20px;
-	width: 800px;
+	width: 700px;
 	margin-left: 20px;
 	margin-top: 20px;
 	margin-bottom: 20px;
 	margin-right: 20px;
 	float: left;
-	font-size: 1.5em;
 }
 
 #searchButton {
-	height: 25px;
 	margin-top: 20px;
 	margin-bottom: 20px;
 	margin-right: 20px;
@@ -77,17 +74,27 @@
 	color: yellow;
 	margin-top: 20px;
 	margin-bottom: 20px;
-	margin-left: 20px;
-	margin-right: 20px;
-	float: left;
+	position: absolute;
+    right: 130px;
 }
-#kart {
+#kart a:link {
 	color: white;
-	margin-top: 20px;
+	/* margin-top: 20px;
 	margin-bottom: 20px;
-	margin-left: 20px;
+	margin-left: 10px;
 	margin-right: 20px;
-	float: left;
+	float: left; */
+	text-decoration: none;
+}
+
+#kart a:hover {
+	color: white;
+	/* margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 10px;
+	margin-right: 20px;
+	float: left; */
+	text-decoration: none;
 }
 
 #cartIcon {
