@@ -91,37 +91,43 @@ def removeItem():
     print(msg)
     return redirect(url_for('root'))
 
-# @app.route("/displayCategory")
-# def displayCategory():
-#         loggedIn, firstName, noOfItems = getLoginDetails()
-#         categoryId = request.args.get("categoryId")
-#         with engine.connect() as conn:
-#             conn.execute("SELECT products.productId, products.name, products.price, products.image, categories.name FROM products, categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = ?", (categoryId, ))
-#             data = cur.fetchall()
-#         conn.close()
-#         categoryName = data[0][4]
-#         data = parse(data)
-#         return render_template('displayCategory.html', data=data, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)
+@app.route("/displayCategory")
+def displayCategory():
+        loggedIn, firstName, noOfItems = getLoginDetails()
+        categoryId = request.args.get("categoryId")
+        # eventually dn this if condition, just for testing so the route doesnt bug out
+        if categoryId == None:
+            categoryId = 1
+        with engine.connect() as conn:
+            data = conn.execute(f"SELECT products.productId, products.name, products.price, products.image, categories.name FROM cme_database.products, cme_database.categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = {categoryId}")
+            productData = conn.execute(f"SELECT * from products where categoryId={categoryId}")
+        conn.close()
+        categoryName = data.all()[0][4]
 
-# @app.route("/account/profile")
-# def profileHome():
-#     if 'email' not in session:
-#         return redirect(url_for('root'))
-#     loggedIn, firstName, noOfItems = getLoginDetails()
-#     return render_template("profileHome.html", loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+        
+        
+        return render_template('displayCategory.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)
 
-# @app.route("/account/profile/edit")
-# def editProfile():
-#     if 'email' not in session:
-#         return redirect(url_for('root'))
-#     loggedIn, firstName, noOfItems = getLoginDetails()
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         cur.execute("SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = ?", (session['email'], ))
-#         profileData = cur.fetchone()
-#     conn.close()
-#     return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+# yet to test
+@app.route("/account/profile")
+def profileHome():
+    if 'email' not in session:
+        return redirect(url_for('root'))
+    loggedIn, firstName, noOfItems = getLoginDetails()
+    return render_template("profileHome.html", loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
+# yet to test
+@app.route("/account/profile/edit")
+def editProfile():
+    if 'email' not in session:
+        return redirect(url_for('root'))
+    loggedIn, firstName, noOfItems = getLoginDetails()
+    with engine.connect() as conn:
+        profileData = conn.execute(f"SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = {session['email']}")
+    conn.close()
+    return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+
+# yet to test, dn to do
 # @app.route("/account/profile/changePassword", methods=["GET", "POST"])
 # def changePassword():
 #     if 'email' not in session:
@@ -151,6 +157,7 @@ def removeItem():
 #     else:
 #         return render_template("changePassword.html")
 
+# yet to test, dn to do
 # @app.route("/updateProfile", methods=["GET", "POST"])
 # def updateProfile():
 #     if request.method == 'POST':
@@ -177,13 +184,14 @@ def removeItem():
 #         con.close()
 #         return redirect(url_for('editProfile'))
 
-# @app.route("/loginForm")
-# def loginForm():
-#     if 'email' in session:
-#         return redirect(url_for('root'))
-#     else:
-#         return render_template('login.html', error='')
+@app.route("/loginForm")
+def loginForm():
+    if 'email' in session:
+        return redirect(url_for('root'))
+    else:
+        return render_template('login.html', error='')
 
+# yet to test, replace with amplify
 # @app.route("/login", methods = ['POST', 'GET'])
 # def login():
 #     if request.method == 'POST':
@@ -196,36 +204,40 @@ def removeItem():
 #             error = 'Invalid UserId / Password'
 #             return render_template('login.html', error=error)
 
-# @app.route("/productDescription")
-# def productDescription():
-#     loggedIn, firstName, noOfItems = getLoginDetails()
-#     productId = request.args.get('productId')
-#     with sqlite3.connect('database.db') as conn:
-#         cur = conn.cursor()
-#         cur.execute('SELECT productId, name, price, description, image, stock FROM products WHERE productId = ?', (productId, ))
-#         productData = cur.fetchone()
-#     conn.close()
-#     return render_template("productDescription.html", data=productData, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
+@app.route("/productDescription")
+def productDescription():
+    loggedIn, firstName, noOfItems = getLoginDetails()
+    productId = request.args.get('productId')
+    # eventually dn this if condition, just for testing so the route doesnt bug out
+    if productId == None:
+        productId = 1
+    with engine.connect() as conn:
+        productData = conn.execute(f'SELECT productId, name, price, description, image, stock FROM products WHERE productId = {productId}')
+        productData = productData.all()[0]
+    conn.close()
+    return render_template("productDescription.html", data=productData, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
 
-# @app.route("/addToCart")
-# def addToCart():
-#     if 'email' not in session:
-#         return redirect(url_for('loginForm'))
-#     else:
-#         productId = int(request.args.get('productId'))
-#         with sqlite3.connect('database.db') as conn:
-#             cur = conn.cursor()
-#             cur.execute("SELECT userId FROM users WHERE email = ?", (session['email'], ))
-#             userId = cur.fetchone()[0]
-#             try:
-#                 cur.execute("INSERT INTO kart (userId, productId) VALUES (?, ?)", (userId, productId))
-#                 conn.commit()
-#                 msg = "Added successfully"
-#             except:
-#                 conn.rollback()
-#                 msg = "Error occured"
-#         conn.close()
-#         return redirect(url_for('root'))
+@app.route("/addToCart")
+def addToCart():
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    else:
+        productId = int(request.args.get('productId'))
+        # eventually dn this if condition, just for testing so the route doesnt bug out
+        if productId == None:
+            productId = 1
+        with engine.connect() as conn:
+
+            userId = conn.execute("SELECT userId FROM users WHERE email = ?", (session['email'], ))
+            userId = userId.add()[0]
+            try:
+                conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
+                conn.commit()
+                msg = "Added successfully"
+            except:
+                msg = "Error occurred"
+        conn.close()
+        return redirect(url_for('root'))
 
 # @app.route("/cart")
 # def cart():
@@ -270,7 +282,7 @@ def removeItem():
 #     return redirect(url_for('root'))
 
 # def is_valid(email, password):
-#     con = sqlite3.connect('database.db')
+#     conn = sqlite3.connect('database.db')
 #     cur = con.cursor()
 #     cur.execute('SELECT email, password FROM users')
 #     data = cur.fetchall()

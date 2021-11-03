@@ -46,27 +46,29 @@
 		<h1>{{data[1]}}</h1>
 	</div>
 	<div style="margin-left:5%">
-		<img src={{url_for('static', filename='uploads/'+data[4]) }} id="productImage" height="300px" width="250px"/>
+		<p>image here</p>
 	</div>
 
 	<div id="productDescription" style="margin-left:5%">
 		<h2>Details</h2>
 		<table id="descriptionTable" >
 			<tr>
-				<td>Name</td>
+				<th>Name:	</th>
 				<td>{{data[1]}}</td>
 			</tr>
 			<tr>
-				<td>Price</td>
+				<th>Price:	</th>
 				<td>${{data[2]}}</td>
 			</tr>
 			<tr>
-				<td>Stock</td>
+				<th>Stock:	</th>
 				<td>{{data[5]}}</td>
 			</tr>
+			<tr>
+				<th>Description:	</th>
+				<td>{{data[3]}}</td>
+			</tr>
 		</table>
-		<h2>Description</h2>
-		<p>{{data[3]}}</p>
 	</div>
 	<div id="addToCart" style="margin-left:5%; margin-bottom: 5%;">
 		<a href="/addToCart?productId={{request.args.get('productId')}}" class="btn btn-success">Add to Cart</a>

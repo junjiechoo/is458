@@ -41,34 +41,21 @@
 	</nav>
 
 <div>
-	<h2 style="margin-left: 5%; margin-top: 3%;">Showing all products of Category {{categoryName}}:</h2>
-	{% for itemData in data %}
+	<h2 style="margin-left: 5%; margin-top: 3%;">Showing all products in category {{categoryName}}:</h2>
 	<table style="margin-left: 5%;">
-		<tr id="productName">
-			{% for row in itemData %}
-			<td>
-				{{row[1]}}
-			</td>
-			{% endfor %}
-		</tr>
-		<tr id="productImage">
-			{% for row in itemData %}
-			<td>
-				<a href="/productDescription?productId={{row[0]}}">
-					<img src={{ url_for('static', filename='uploads/' + row[3]) }} id="itemImage" />
-				</a>
-			</td>
-			{% endfor %}
-		</tr>
-		<tr id="productPrice">
-			{% for row in itemData %}
-			<td>
-				${{row[2]}}
-			</td>
-			{% endfor %}
-		</tr>
+		{% for product in productData %}
+			<tr id="productName">
+				<td>{{product[1]}}</td>
+			</tr>
+			<tr>
+				<td>image goes here</td>
+			</tr>
+			<tr id="productPrice">
+				<td>${{product[2]}}</td>
+			</tr>
+		{% endfor %}	
 	</table>
-	{% endfor %}
+	
 </div>
 
 
