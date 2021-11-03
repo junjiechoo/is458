@@ -32,7 +32,6 @@ def getLoginDetails():
 def root():
     loggedIn, firstName, noOfItems = getLoginDetails()
     with engine.connect() as conn:
-        # categoryData = conn.execute(text("SELECT * from categories"))
         categoryData = conn.execute("SELECT * from categories")
         productData = conn.execute(text("SELECT * from products"))
         return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
@@ -95,17 +94,14 @@ def removeItem():
 def displayCategory():
         loggedIn, firstName, noOfItems = getLoginDetails()
         categoryId = request.args.get("categoryId")
-        # eventually dn this if condition, just for testing so the route doesnt bug out
-        if categoryId == None:
-            categoryId = 1
         with engine.connect() as conn:
             data = conn.execute(f"SELECT products.productId, products.name, products.price, products.image, categories.name FROM cme_database.products, cme_database.categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = {categoryId}")
             productData = conn.execute(f"SELECT * from products where categoryId={categoryId}")
         conn.close()
         categoryName = data.all()[0][4]
+        print(data.all())
+        
 
-        
-        
         return render_template('displayCategory.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)
 
 # yet to test

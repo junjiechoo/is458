@@ -54,7 +54,7 @@
 		{% for product in productData %}
 		<table class="center">
 			<tr id="productName">
-				<td>{{product[1]}}</td>
+				<td><a href="{{url_for('productDescription', productId=product[0])}}">{{product[1]}}</a></td>
 			</tr>
 			<tr>
 				<td>image goes here</td>
