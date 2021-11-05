@@ -1,14 +1,24 @@
 from datetime import timedelta
 from flask import *
+import boto3, requests
 import sqlite3, hashlib, os
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
+import key_config as keys
 
 app = Flask(__name__)
 app.secret_key = 'random string'
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
+
+s3 = boto3.client('s3',
+                  aws_access_key_id = keys.aws_access_key_id,
+                  aws_secret_access_key=keys.aws_secret_access_key,
+                  aws_session_token=keys.aws_session_token
+                 )
+
+BUCKET_NAME = 'is458'
 
 engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 
@@ -33,7 +43,26 @@ def root():
     loggedIn, firstName, noOfItems = getLoginDetails()
     with engine.connect() as conn:
         categoryData = conn.execute("SELECT * from categories")
-        productData = conn.execute(text("SELECT * from products"))
+        productDataRaw = conn.execute(text("SELECT * from products"))
+        productData = []
+        for productRaw in productDataRaw:
+            details = []
+            details.append(productRaw[0])
+            details.append(productRaw[1])
+            details.append(productRaw[2])
+            details.append(productRaw[3])
+            if productRaw[4] != None:
+                imageURL = s3.generate_presigned_url('get_object',
+                                                    Params={'Bucket': BUCKET_NAME,
+                                                            'Key': productRaw[4]},
+                                                    ExpiresIn=0)
+                details.append(imageURL)
+            else:
+                details.append("https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg")
+            details.append(productRaw[5])
+            productData.append(details)
+
+        print(productData[-1])
         return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
     
 @app.route("/add")
@@ -53,20 +82,26 @@ def addItem():
         categoryId = int(request.form['category'])
 
         # #Uploading image procedure
-        # image = request.files['image']
-        # if image and allowed_file(image.filename):
-        #     filename = secure_filename(image.filename)
-        #     image.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        # imagename = filename
-        with engine.connect() as conn:
-            try:
-                conn.execute(text(f"INSERT INTO cme_database.products(productId, name, price, description, stock, categoryId) VALUES (2, '{name}', {price}, '{description}', stock, categoryId)"))
-                msg="added successfully"
-            except:
-                msg="error occurred"
+        image = request.files['image']
+        if image and allowed_file(image.filename):
+            filename = secure_filename(image.filename)
+
+            # might need to remove this, adds file to the source code
+            # image.save(filename)
+
+            # s3.upload_file(
+            #     filename, BUCKET_NAME, filename
+            # )
+            with engine.connect() as conn:
+                try:
+                    conn.execute(text(f"INSERT INTO cme_database.products(productId, name, price, description, image, stock, categoryId) VALUES (4, '{name}', {price}, '{description}', '{filename}', {stock}, {categoryId})"))
+                    msg="added successfully"
+                except:
+                    msg="error occurred"
+            conn.close()
+        else:
+            msg = "error occurred, invalid file type"       
                 
-                
-        conn.close()
         print(msg)
         return redirect(url_for('root'))
 
@@ -105,23 +140,23 @@ def displayCategory():
         return render_template('displayCategory.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)
 
 # yet to test
-@app.route("/account/profile")
-def profileHome():
-    if 'email' not in session:
-        return redirect(url_for('root'))
-    loggedIn, firstName, noOfItems = getLoginDetails()
-    return render_template("profileHome.html", loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+# @app.route("/account/profile")
+# def profileHome():
+#     if 'email' not in session:
+#         return redirect(url_for('root'))
+#     loggedIn, firstName, noOfItems = getLoginDetails()
+#     return render_template("profileHome.html", loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 # yet to test
 @app.route("/account/profile/edit")
-def editProfile():
-    if 'email' not in session:
-        return redirect(url_for('root'))
-    loggedIn, firstName, noOfItems = getLoginDetails()
-    with engine.connect() as conn:
-        profileData = conn.execute(f"SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = {session['email']}")
-    conn.close()
-    return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+# def editProfile():
+#     if 'email' not in session:
+#         return redirect(url_for('root'))
+#     loggedIn, firstName, noOfItems = getLoginDetails()
+#     with engine.connect() as conn:
+#         profileData = conn.execute(f"SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = {session['email']}")
+#     conn.close()
+#     return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 # yet to test, dn to do
 # @app.route("/account/profile/changePassword", methods=["GET", "POST"])
@@ -324,9 +359,9 @@ def logout():
 # def registrationForm():
 #     return render_template("register.html")
 
-# def allowed_file(filename):
-#     return '.' in filename and \
-#             filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+def allowed_file(filename):
+    return '.' in filename and \
+            filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 # def parse(data):
 #     ans = []
