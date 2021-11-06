@@ -4,14 +4,18 @@ import sqlite3, hashlib, os
 from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
+from secretsManager import get_secret
 
 app = Flask(__name__)
-app.secret_key = 'random string'
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
+app.secret_key = "random string"
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 
-engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+secrets_dict = get_secret()
 
+engine = create_engine(
+    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+)
 def getLoginDetails():
     with engine.connect() as conn:
         # cur = conn.cursor()
