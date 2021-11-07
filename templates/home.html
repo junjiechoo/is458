@@ -12,7 +12,7 @@
 		<!-- <img id="logo" src= {{ url_for('static', filename='images/logo.png') }} /> -->
 		<img id="logo" src="https://is458.s3.amazonaws.com/logo.png" style="height:70px; width:70px"/>
 	</a>
-	<form>
+	<form action="{{url_for('search')}}" method="POST">
 		<input id="searchBox" class="form-control" placeholder="Search" type="text" name="searchQuery">
 		<input id="searchButton" class="btn btn-outline-light" type="submit" value="Search">
 	</form>
@@ -57,7 +57,11 @@
 				<td><a href="{{url_for('productDescription', productId=product[0])}}">{{product[1]}}</a></td>
 			</tr>
 			<tr>
-				<td> <img src="{{product[4]}}" alt=""> </td>
+				{% if product[4] == None %}
+				<td> <img src="https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg"> </td>
+				{% else %}
+				<td><img src="https://keithprojectbucket.s3.amazonaws.com/CME/{{product[4]}}" ></td>
+				{% endif %}
 			</tr>
 			<tr id="productPrice">
 				<td>${{product[2]}}</td>

@@ -15,10 +15,10 @@ ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 s3 = boto3.client('s3',
                   aws_access_key_id = keys.aws_access_key_id,
                   aws_secret_access_key=keys.aws_secret_access_key,
-                  aws_session_token=keys.aws_session_token
+                #   aws_session_token=keys.aws_session_token
                  )
 
-BUCKET_NAME = 'is458'
+BUCKET_NAME = 'keithprojectbucket'
 
 engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 
@@ -43,28 +43,39 @@ def root():
     loggedIn, firstName, noOfItems = getLoginDetails()
     with engine.connect() as conn:
         categoryData = conn.execute("SELECT * from categories")
-        productDataRaw = conn.execute(text("SELECT * from products"))
-        productData = []
-        for productRaw in productDataRaw:
-            details = []
-            details.append(productRaw[0])
-            details.append(productRaw[1])
-            details.append(productRaw[2])
-            details.append(productRaw[3])
-            if productRaw[4] != None:
-                imageURL = s3.generate_presigned_url('get_object',
-                                                    Params={'Bucket': BUCKET_NAME,
-                                                            'Key': productRaw[4]},
-                                                    ExpiresIn=0)
-                details.append(imageURL)
-            else:
-                details.append("https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg")
-            details.append(productRaw[5])
-            productData.append(details)
+        productData = conn.execute(text("SELECT * from products"))
+        # productData = []
+        # for productRaw in productDataRaw:
+        #     details = []
+        #     details.append(productRaw[0])
+        #     details.append(productRaw[1])
+        #     details.append(productRaw[2])
+        #     details.append(productRaw[3])
+        #     if productRaw[4] != None:
+        #         imageURL = s3.generate_presigned_url('get_object',
+        #                                             Params={'Bucket': BUCKET_NAME,
+        #                                                     'Key': productRaw[4]},
+        #                                             ExpiresIn=0)
+        #         imageURL = "https://keithprojectbucket.s3.amazonaws.com/CME/low_qi_long.jpg"
+        #         details.append(imageURL)
+        #         print("imageURL is: ", imageURL)
+        #     else:
+        #         details.append("https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg")
+        #     details.append(productRaw[5])
+        #     productData.append(details)
 
-        print(productData[-1])
         return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
-    
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    query = request.form['searchQuery']
+    # for key,value in request.form:
+    #     print(key, ": ", value)
+    with engine.connect() as conn:
+        productData = conn.execute(f"SELECT * FROM cme_database.products WHERE name = '{query}'")
+    conn.close()
+    return render_template('home.html', productData=productData)
+
 @app.route("/add")
 def admin():
     with engine.connect() as conn:
@@ -86,11 +97,11 @@ def addItem():
         if image and allowed_file(image.filename):
             filename = secure_filename(image.filename)
 
-            # might need to remove this, adds file to the source code
-            # image.save(filename)
+            # need this if not s3.upload_file will get error
+            image.save(filename)
 
             # s3.upload_file(
-            #     filename, BUCKET_NAME, filename
+            #     filename, BUCKET_NAME, "CME/"+filename, ExtraArgs={'ACL':'public-read'}
             # )
             with engine.connect() as conn:
                 try:
@@ -105,13 +116,15 @@ def addItem():
         print(msg)
         return redirect(url_for('root'))
 
+
+# got use??
 @app.route("/remove")
 def remove():
     with engine.connect() as conn:
         data = conn.execute('SELECT productId, name, price, description, image, stock FROM products')
     conn.close()
     return render_template('remove.html', data=data)
-
+# got use??
 @app.route("/removeItem")
 def removeItem():
     productId = request.args.get('productId')
@@ -134,7 +147,7 @@ def displayCategory():
             productData = conn.execute(f"SELECT * from products where categoryId={categoryId}")
         conn.close()
         categoryName = data.all()[0][4]
-        print(data.all())
+        
         
 
         return render_template('displayCategory.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)

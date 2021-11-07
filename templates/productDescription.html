@@ -46,7 +46,13 @@
 		<h1>{{data[1]}}</h1>
 	</div>
 	<div style="margin-left:5%">
-		<p>image here</p>
+		<p>
+			{% if product[4] == None %}
+				<td><img src="https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg"></td>
+			{% else %}
+				<td><img src="https://keithprojectbucket.s3.amazonaws.com/CME/{{product[4]}}" ></td>
+			{% endif %}
+		</p>
 	</div>
 
 	<div id="productDescription" style="margin-left:5%">
