@@ -6,11 +6,12 @@ from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
 import key_config as keys
+from secretsManager import get_secret
 
 app = Flask(__name__)
-app.secret_key = 'random string'
-UPLOAD_FOLDER = 'static/uploads'
-ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
+app.secret_key = "random string"
+UPLOAD_FOLDER = "static/uploads"
+ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 
 s3 = boto3.client('s3',
                   aws_access_key_id = keys.aws_access_key_id,
@@ -21,7 +22,11 @@ s3 = boto3.client('s3',
 BUCKET_NAME = 'keithprojectbucket'
 
 engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+secrets_dict = get_secret()
 
+engine = create_engine(
+    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+)
 def getLoginDetails():
     with engine.connect() as conn:
         # cur = conn.cursor()
@@ -390,4 +395,4 @@ def allowed_file(filename):
 #     return ans
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
