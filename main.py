@@ -77,7 +77,6 @@ def root():
     with engine.connect() as conn:
         categoryData = conn.execute("SELECT * from categories")
         productData = conn.execute(text("SELECT * from products"))
-
         return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
 
 @app.route("/search", methods=["GET", "POST"])
