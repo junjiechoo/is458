@@ -20,8 +20,8 @@ s3 = boto3.client('s3',
 
 ses = boto3.client('ses',
                     region_name='us-east-1',
-                    aws_access_key_id = '',
-                    aws_secret_access_key=''
+                    aws_access_key_id = 'AKIA45COZBM2ANKUEJ4L',
+                    aws_secret_access_key='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'
                   )
 
 BUCKET_NAME = 'keithprojectbucket'
@@ -41,33 +41,34 @@ def getLoginDetails():
             noOfItems = 0
         else:
             loggedIn = True
-            conn.execute("SELECT userId, firstName FROM users WHERE email = ?", (session['email'], ))
-            userId, firstName = conn.fetchone()
-            conn.execute("SELECT count(productId) FROM kart WHERE userId = ?", (userId, ))
-            noOfItems = conn.fetchone()[0]
+            user = conn.execute(f"SELECT userId, firstName FROM users WHERE email = '{session['email']}'")
+            userformatted = user.all()[0]
+            userId = userformatted[0]
+            firstName = userformatted[1]
+            products = conn.execute(f"SELECT count(productId) FROM kart WHERE userId = '{userId}'")
+            noOfItems = products.all()[0][0]
+            # noOfItems = 0
     conn.close()
     return (loggedIn, firstName, noOfItems)
 
-@app.route('/sendEmail')
-def sendEmail():
+def sendEmail(des, content):
     response = ses.send_email(
     Source='keithtan.2019@scis.smu.edu.sg',
     Destination={
-        'ToAddresses': ['blownbarrel@gmail.com']
+        'ToAddresses': [str(des)]
     },
     Message={
         'Subject': {
-            'Data': 'test email',
+            'Data': content['subject'],
         },
         'Body': {
             'Text': {
-                'Data': 'test email',
+                'Data': content['body'],
             },
         }
     }
     )
     print(response)
-    return 'email sent'
 
 
 @app.route("/")
@@ -91,39 +92,46 @@ def search():
 
 @app.route("/add")
 def admin():
-    with engine.connect() as conn:
-        categories = conn.execute("SELECT categoryId, name FROM categories")
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    else:
+        with engine.connect() as conn:
+            categories = conn.execute("SELECT categoryId, name FROM categories")
         
     return render_template('add.html', categories=categories)
 
 @app.route("/addItem", methods=["GET", "POST"])
 def addItem():
-    if request.method == "POST":
-        name = request.form['name']
-        price = int(request.form['price'])
-        description = request.form['description']
-        stock = int(request.form['stock'])
-        categoryId = int(request.form['category'])
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    else:
+        if request.method == "POST":
+            name = request.form['name']
+            price = int(request.form['price'])
+            description = request.form['description']
+            stock = int(request.form['stock'])
+            categoryId = int(request.form['category'])
 
-        image = request.files['image']
-        if image and allowed_file(image.filename):
-            filename = secure_filename(image.filename)
+            image = request.files['image']
+            if image and allowed_file(image.filename):
+                filename = secure_filename(image.filename)
 
-            # need this if not s3.upload_file will get error
-            image.save(filename)
+                # need this if not s3.upload_file will get error
+                image.save(filename)
 
-            # s3.upload_file(
-            #     filename, BUCKET_NAME, "CME/"+filename, ExtraArgs={'ACL':'public-read'}
-            # )
-            with engine.connect() as conn:
-                try:
-                    conn.execute(text(f"INSERT INTO cme_database.products(productId, name, price, description, image, stock, categoryId) VALUES (4, '{name}', {price}, '{description}', '{filename}', {stock}, {categoryId})"))
-                    msg="added successfully"
-                except:
-                    msg="error occurred"
-            conn.close()
-        else:
-            msg = "error occurred, invalid file type"       
+                s3.upload_file(
+                    filename, BUCKET_NAME, "CME/"+filename, ExtraArgs={'ACL':'public-read'}
+                )
+                with engine.connect() as conn:
+                    try:
+                        conn.execute(text(f"INSERT INTO cme_database.products(name, price, description, image, stock, categoryId) VALUES ('{name}', {price}, '{description}', '{filename}', {stock}, {categoryId})"))
+                        msg="added successfully"
+                        sendEmail(session['email'], {"subject": f"Successfully listed new item {name}", "body": f"New item {name} listed"})
+                    except:
+                        msg="error occurred"
+                conn.close()
+            else:
+                msg = "error occurred, invalid file type"       
                 
         print(msg)
         return redirect(url_for('root'))
@@ -132,10 +140,14 @@ def addItem():
 # got use??
 @app.route("/remove")
 def remove():
-    with engine.connect() as conn:
-        data = conn.execute('SELECT productId, name, price, description, image, stock FROM products')
-    conn.close()
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    else:
+        with engine.connect() as conn:
+            data = conn.execute('SELECT productId, name, price, description, image, stock FROM products')
+        conn.close()
     return render_template('remove.html', data=data)
+
 # got use??
 @app.route("/removeItem")
 def removeItem():
@@ -278,18 +290,17 @@ def addToCart():
         return redirect(url_for('loginForm'))
     else:
         productId = int(request.args.get('productId'))
-        # eventually dn this if condition, just for testing so the route doesnt bug out
-        if productId == None:
-            productId = 1
+        print(productId)
         with engine.connect() as conn:
-            userId = conn.execute("SELECT userId FROM users WHERE email = ?", (session['email'], ))
-            userId = userId.all()[0]
-            try:
-                conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
-                # conn.commit()
-                msg = "Added successfully"
-            except:
-                msg = "Error occurred"
+            userId = conn.execute(f"SELECT userId FROM users WHERE email = '{session['email']}'")
+            userId = userId.all()[0][0]
+            print(userId)
+            # try:
+            conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
+            # conn.commit()
+            # msg = "Added successfully"
+            # except:
+            #     msg = "Error occurred"
         conn.close()
         return redirect(url_for('root'))
 
@@ -302,13 +313,14 @@ def cart():
     email = session['email']
     with engine.connect() as conn:
         userId = conn.execute(f"SELECT userId FROM users WHERE email = '{email}'")
-        userId = userId.add()[0]
-        conn.execute(f"SELECT products.productId, products.name, products.price, products.image FROM cme_database.products, cme_database.kart WHERE products.productId = kart.productId AND kart.userId = {userId}")
-        products = conn.fetchall()
+        userId = userId.all()[0][0]
+        print(userId)
+        products = conn.execute(f"SELECT products.productId, products.name, products.price, products.image FROM cme_database.products, cme_database.kart WHERE products.productId = kart.productId AND kart.userId = {userId}")
+        products = products.all()
     totalPrice = 0
     for row in products:
         totalPrice += row[2]
-    return render_template("cart.html", products = products, totalPrice=totalPrice, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+    return render_template("cart.html", products=products, totalPrice=totalPrice, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 # yet to test
 @app.route("/removeFromCart")
@@ -317,20 +329,40 @@ def removeFromCart():
         return redirect(url_for('loginForm'))
     email = session['email']
     productId = int(request.args.get('productId'))
-    # eventually dn this if condition, just for testing so the route doesnt bug out
-    if productId == None:
-        productId = 1
     with engine.connect() as conn:
         userId = conn.execute(f"SELECT userId FROM users WHERE email = '{email}'")
-        userId = userId.all()[0]
+        userId = userId.all()[0][0]
         try:
-            conn.execute("DELETE FROM kart WHERE userId = ? AND productId = ?", (userId, productId))
+            conn.execute(f"DELETE FROM kart WHERE userId = {userId} AND productId = {productId}")
             # conn.commit()
             msg = "removed successfully"
         except:
             msg = "error occurred"
     conn.close()
     return redirect(url_for('root'))
+
+@app.route("/checkout")
+def checkout():
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    loggedIn, firstName, noOfItems = getLoginDetails()
+    with engine.connect() as conn:
+        userId = conn.execute(f"SELECT userId FROM users WHERE email = '{session['email']}'")
+        userId = userId.all()[0][0]
+        # print(lastName)
+        products = conn.execute(f"SELECT products.productId, products.name, products.price, products.image FROM cme_database.products, cme_database.kart WHERE products.productId = kart.productId AND kart.userId = {userId}")
+        products = products.all()
+        totalPrice = 0
+    for row in products:
+        totalPrice += row[2]
+    return render_template("checkout.html", products=products, totalPrice=totalPrice, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+
+@app.route("/checkoutSuccess")
+def checkoutSuccess():
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    sendEmail(session['email'], {"subject": f"Your new order", "body": f"You've just wasted money"})
+    return f"You've just wasted money"
 
 @app.route("/logout")
 def logout():
@@ -339,11 +371,10 @@ def logout():
 
 def is_valid(email, password):
     conn = engine.connect()
-    data = conn.execute('SELECT email, password FROM users')
+    data = conn.execute(f"SELECT email, password FROM users WHERE email = '{email}' and password = '{password}'")
     data = data.fetchall()
-    for row in data:
-        if row[0] == email and row[1] == hashlib.md5(password.encode()).hexdigest():
-            return True
+    if len(data) == 1:
+        return True
     return False
 
 # replace with amplify
@@ -366,7 +397,6 @@ def register():
         with engine.connect() as conn:
             try:
                 conn.execute(f"INSERT INTO users (password, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone) VALUES ('{password}', '{email}', '{firstName}', '{lastName}', '{address1}', '{address2}', {zipcode}, '{city}', '{state}', '{country}', '{phone}')")
-                # conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
                 # conn.commit()
                 msg = "Registered Successfully"
                 response = ses.verify_email_address(EmailAddress=f"{email}")
