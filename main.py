@@ -6,7 +6,7 @@ from werkzeug.utils import secure_filename
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
 import key_config as keys
-# from secretsManager import get_secret
+from secretsManager import get_secret
 
 app = Flask(__name__)
 app.secret_key = "random string"
