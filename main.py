@@ -20,12 +20,12 @@ s3 = boto3.client('s3',
 
 BUCKET_NAME = 'keithprojectbucket'
 
-engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
-# secrets_dict = get_secret()
+# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 
-# engine = create_engine(
-    # f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
-# )
+secrets_dict = get_secret()
+engine = create_engine(
+    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+)
 def getLoginDetails():
     with engine.connect() as conn:
         # cur = conn.cursor()
