@@ -19,7 +19,8 @@
 
 	{% if not loggedIn %}
 	<div id="signInButton">
-		<button type="button" href="/loginForm" class="btn btn-outline-light">Sign In</button>
+		<a href="/loginForm"><button type="button" href="/loginForm" class="btn btn-outline-light">Sign In</button></a>
+			
 	</div>
 	{% else %}
 	<div class="dropdown">
@@ -40,6 +41,9 @@
 	</div>
 </nav>
 
+<form action="{{url_for('sendEmail')}}" method="post">
+	<input type="submit" name="send email">
+</form>
 
 <div class="display">
 	<div class="displayCategory" style="font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif">

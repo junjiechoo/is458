@@ -15,17 +15,23 @@ ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 
 s3 = boto3.client('s3',
                   aws_access_key_id = keys.aws_access_key_id,
-                  aws_secret_access_key=keys.aws_secret_access_key,
+                  aws_secret_access_key=keys.aws_secret_access_key
                  )
+
+ses = boto3.client('ses',
+                    region_name='us-east-1',
+                    aws_access_key_id = '',
+                    aws_secret_access_key=''
+                  )
 
 BUCKET_NAME = 'keithprojectbucket'
 
-# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 
-secrets_dict = get_secret()
-engine = create_engine(
-    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
-)
+# secrets_dict = get_secret()
+# engine = create_engine(
+#     f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+# )
 def getLoginDetails():
     with engine.connect() as conn:
         # cur = conn.cursor()
@@ -42,31 +48,34 @@ def getLoginDetails():
     conn.close()
     return (loggedIn, firstName, noOfItems)
 
+@app.route('/sendEmail')
+def sendEmail():
+    response = ses.send_email(
+    Source='keithtan.2019@scis.smu.edu.sg',
+    Destination={
+        'ToAddresses': ['blownbarrel@gmail.com']
+    },
+    Message={
+        'Subject': {
+            'Data': 'test email',
+        },
+        'Body': {
+            'Text': {
+                'Data': 'test email',
+            },
+        }
+    }
+    )
+    print(response)
+    return 'email sent'
+
+
 @app.route("/")
 def root():
     loggedIn, firstName, noOfItems = getLoginDetails()
     with engine.connect() as conn:
         categoryData = conn.execute("SELECT * from categories")
         productData = conn.execute(text("SELECT * from products"))
-        # productData = []
-        # for productRaw in productDataRaw:
-        #     details = []
-        #     details.append(productRaw[0])
-        #     details.append(productRaw[1])
-        #     details.append(productRaw[2])
-        #     details.append(productRaw[3])
-        #     if productRaw[4] != None:
-        #         imageURL = s3.generate_presigned_url('get_object',
-        #                                             Params={'Bucket': BUCKET_NAME,
-        #                                                     'Key': productRaw[4]},
-        #                                             ExpiresIn=0)
-        #         imageURL = "https://keithprojectbucket.s3.amazonaws.com/CME/low_qi_long.jpg"
-        #         details.append(imageURL)
-        #         print("imageURL is: ", imageURL)
-        #     else:
-        #         details.append("https://images.fastcompany.net/image/upload/w_596,c_limit,q_auto:best,f_auto/fc/3034007-inline-i-applelogo.jpg")
-        #     details.append(productRaw[5])
-        #     productData.append(details)
 
         return render_template('home.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
 
@@ -96,7 +105,6 @@ def addItem():
         stock = int(request.form['stock'])
         categoryId = int(request.form['category'])
 
-        # #Uploading image procedure
         image = request.files['image']
         if image and allowed_file(image.filename):
             filename = secure_filename(image.filename)
@@ -151,8 +159,6 @@ def displayCategory():
             productData = conn.execute(f"SELECT * from products where categoryId={categoryId}")
         conn.close()
         categoryName = data.all()[0][4]
-        
-        
 
         return render_template('displayCategory.html', productData=productData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryName=categoryName)
 
@@ -165,7 +171,7 @@ def displayCategory():
 #     return render_template("profileHome.html", loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 # yet to test
-@app.route("/account/profile/edit")
+# @app.route("/account/profile/edit")
 # def editProfile():
 #     if 'email' not in session:
 #         return redirect(url_for('root'))
@@ -240,17 +246,17 @@ def loginForm():
         return render_template('login.html', error='')
 
 # yet to test, replace with amplify
-# @app.route("/login", methods = ['POST', 'GET'])
-# def login():
-#     if request.method == 'POST':
-#         email = request.form['email']
-#         password = request.form['password']
-#         if is_valid(email, password):
-#             session['email'] = email
-#             return redirect(url_for('root'))
-#         else:
-#             error = 'Invalid UserId / Password'
-#             return render_template('login.html', error=error)
+@app.route("/login", methods = ['POST', 'GET'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        if is_valid(email, password):
+            session['email'] = email
+            return redirect(url_for('root'))
+        else:
+            error = 'Invalid UserId / Password'
+            return render_template('login.html', error=error)
 
 @app.route("/productDescription")
 def productDescription():
@@ -280,7 +286,7 @@ def addToCart():
             userId = userId.all()[0]
             try:
                 conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
-                conn.commit()
+                # conn.commit()
                 msg = "Added successfully"
             except:
                 msg = "Error occurred"
@@ -319,7 +325,7 @@ def removeFromCart():
         userId = userId.all()[0]
         try:
             conn.execute("DELETE FROM kart WHERE userId = ? AND productId = ?", (userId, productId))
-            conn.commit()
+            # conn.commit()
             msg = "removed successfully"
         except:
             msg = "error occurred"
@@ -331,50 +337,48 @@ def logout():
     session.pop('email', None)
     return redirect(url_for('root'))
 
-# def is_valid(email, password):
-#     conn = engine.connect()
-#     conn.execute('SELECT email, password FROM users')
-#     data = conn.fetchall()
-#     for row in data:
-#         if row[0] == email and row[1] == hashlib.md5(password.encode()).hexdigest():
-#             return True
-#     return False
+def is_valid(email, password):
+    conn = engine.connect()
+    data = conn.execute('SELECT email, password FROM users')
+    data = data.fetchall()
+    for row in data:
+        if row[0] == email and row[1] == hashlib.md5(password.encode()).hexdigest():
+            return True
+    return False
 
 # replace with amplify
-# @app.route("/register", methods = ['GET', 'POST'])
-# def register():
-#     if request.method == 'POST':
-#         #Parse form data    
-#         password = request.form['password']
-#         email = request.form['email']
-#         firstName = request.form['firstName']
-#         lastName = request.form['lastName']
-#         address1 = request.form['address1']
-#         address2 = request.form['address2']
-#         zipcode = request.form['zipcode']
-#         city = request.form['city']
-#         state = request.form['state']
-#         country = request.form['country']
-#         phone = request.form['phone']
-
-#         with sqlite3.connect('database.db') as con:
-#             try:
-#                 cur = con.cursor()
-#                 cur.execute('INSERT INTO users (password, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (hashlib.md5(password.encode()).hexdigest(), email, firstName, lastName, address1, address2, zipcode, city, state, country, phone))
-
-#                 con.commit()
-
-#                 msg = "Registered Successfully"
-#             except:
-#                 con.rollback()
-#                 msg = "Error occured"
-#         con.close()
-#         return render_template("login.html", error=msg)
+@app.route("/register", methods = ['GET', 'POST'])
+def register():
+    if request.method == 'POST':  
+        password = request.form['password']
+        email = request.form['email']
+        firstName = request.form['firstName']
+        lastName = request.form['lastName']
+        address1 = request.form['address1']
+        address2 = request.form['address2']
+        zipcode = int(request.form['zipcode']) 
+        city = request.form['city']
+        state = request.form['state']
+        country = request.form['country']
+        phone = request.form['phone']
+        
+        msg = ''
+        with engine.connect() as conn:
+            try:
+                conn.execute(f"INSERT INTO users (password, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone) VALUES ('{password}', '{email}', '{firstName}', '{lastName}', '{address1}', '{address2}', {zipcode}, '{city}', '{state}', '{country}', '{phone}')")
+                # conn.execute(f"INSERT INTO kart (userId, productId) VALUES ({userId}, {productId})")
+                # conn.commit()
+                msg = "Registered Successfully"
+                response = ses.verify_email_address(EmailAddress=f"{email}")
+            except:
+                msg = "Error occurred"
+        conn.close()
+        return render_template("login.html", error=msg)
 
 # replace with amplify
-# @app.route("/registerationForm")
-# def registrationForm():
-#     return render_template("register.html")
+@app.route("/registrationForm")
+def registrationForm():
+    return render_template("register.html")
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -394,4 +398,4 @@ def allowed_file(filename):
 #     return ans
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", debug=True)
+    app.run(debug=True)
