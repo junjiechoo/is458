@@ -16,17 +16,16 @@ ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 s3 = boto3.client('s3',
                   aws_access_key_id = keys.aws_access_key_id,
                   aws_secret_access_key=keys.aws_secret_access_key,
-                #   aws_session_token=keys.aws_session_token
                  )
 
 BUCKET_NAME = 'keithprojectbucket'
 
-# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
-secrets_dict = get_secret()
+engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+# secrets_dict = get_secret()
 
-engine = create_engine(
-    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
-)
+# engine = create_engine(
+    # f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+# )
 def getLoginDetails():
     with engine.connect() as conn:
         # cur = conn.cursor()
@@ -261,10 +260,10 @@ def productDescription():
     if productId == None:
         productId = 1
     with engine.connect() as conn:
-        productData = conn.execute(f'SELECT productId, name, price, description, image, stock FROM products WHERE productId = {productId}')
-        productData = productData.all()[0]
+        product = conn.execute(f'SELECT productId, name, price, description, image, stock FROM products WHERE productId = {productId}')
+        product = product.all()[0]
     conn.close()
-    return render_template("productDescription.html", data=productData, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
+    return render_template("productDescription.html", data=product, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
 
 # yet to test
 @app.route("/addToCart")
