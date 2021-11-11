@@ -8,9 +8,9 @@ from botocore.exceptions import ClientError
 import json
 
 
-def get_secret():
+def get_secret(secret_name):
 
-    secret_name = "RDS_MYSQL_CME_Credentials"
+    secret_name = secret_name
     region_name = "us-east-1"
 
     # Create a Secrets Manager client
