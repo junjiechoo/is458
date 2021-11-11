@@ -20,8 +20,8 @@ s3 = boto3.client('s3',
 
 ses = boto3.client('ses',
                     region_name='us-east-1',
-                    aws_access_key_id = 'AKIA45COZBM2ANKUEJ4L',
-                    aws_secret_access_key='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'
+                    aws_access_key_id = '',
+                    aws_secret_access_key=''
                   )
 
 BUCKET_NAME = 'keithprojectbucket'
