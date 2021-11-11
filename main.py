@@ -7,35 +7,36 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine, text
 import key_config as keys
 from secretsManager import get_secret
+from flask import request
 
 app = Flask(__name__)
 app.secret_key = "random string"
 UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 
-s3_secrets = get_secret("S3_CME_Credentials")
-ses_secrets = get_secret("SES_CME_Credentials")
+# s3_secrets = get_secret("S3_CME_Credentials")
+# ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id=s3_secrets["access_key"],
-    aws_secret_access_key=s3_secrets["secret_access_key"],
+    aws_access_key_id='AKIA45COZBM2IR5UOVXO',
+    aws_secret_access_key='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',
 )
 
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id=ses_secrets["access_id"],
-    aws_secret_access_key=ses_secrets["access_secret"],
+    aws_access_key_id='AKIA45COZBM2I5VQ5HJL',
+    aws_secret_access_key='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',
 )
 
 BUCKET_NAME = "keithprojectbucket"
 
-# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
-secrets_dict = get_secret("RDS_MYSQL_CME_Credentials")
-engine = create_engine(
-    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
-)
+engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+# secrets_dict = get_secret("RDS_MYSQL_CME_Credentials")
+# engine = create_engine(
+#     f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+# )
 
 
 def getLoginDetails():
@@ -64,7 +65,7 @@ def getLoginDetails():
 
 def sendEmail(fro, des, content):
     response = ses.send_email(
-        Source=fro,
+        Source=str(fro),
         Destination={"ToAddresses": [str(des)]},
         Message={
             "Subject": {
@@ -159,7 +160,7 @@ def addItem():
                             {
                                 "subject": f"Successfully listed new item {name}",
                                 "body": f"New item {name} listed",
-                            },
+                            }
                         )
                     except:
                         msg = "error occurred"
@@ -455,17 +456,22 @@ def checkout():
 def checkoutSuccess():
     if "email" not in session:
         return redirect(url_for("loginForm"))
-    # sendEmail(
-    #     "keithtan.2019@scis.smu.edu.sg",
-    #     session["email"],
-    #     {"subject": f"Your new order", "body": f"You've just wasted money"}
-    # )
-    # sendEmail(
-    #     "qilong.low.2019@scis.smu.edu.sg",
-    #     session['email'],
-    #     {"subject": f"New Order", "body": f"Pls prepare"}
-    # )
-    return f"You've just wasted money"
+    sendEmail(
+        "qilong.low.2019@scis.smu.edu.sg",
+        "blownbarrel@gmail.com",
+        {"subject": f"Your new order", "body": f"You've just wasted money"}
+    )
+    sendEmail(
+        "qilong.low.2019@scis.smu.edu.sg",
+        session['email'],
+        {"subject": f"New Order", "body": f"Pls prepare"}
+    )
+    totalPrice = request.args.get('grand')
+    with engine.connect() as conn:
+        conn.execute(f"update cme_database.sales set Sales = Sales+{totalPrice} where productId = 3")
+        
+    print(totalPrice)
+    return f"You've just wasted {totalPrice}"
 
 
 @app.route("/logout")
@@ -539,20 +545,17 @@ def allowed_file(filename):
 #         ans.append(curr)
 #     return ans
 
-
 @app.route("/admin/analytics")
 def viewAnalytics():
     with engine.connect() as conn:
         productId = 0
-        product = conn.execute(
-            f"SELECT * FROM salesperformance WHERE productName = {productId}"
-        )
+        product = conn.execute(f'SELECT * FROM salesperformance WHERE productName = {productId}')
         product = product.all()[0]
-        users = conn.execute(f"SELECT COUNT(DISTINCT userID) from users")
+        users = conn.execute(f'SELECT COUNT(DISTINCT userID) from users')
         users = users.all()[0]
     conn.close()
-    return render_template("analytics.html", data=product, users=users)
+    return render_template("analytics.html", data=product, users = users)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",debug=True)
+    app.run(debug=True)
