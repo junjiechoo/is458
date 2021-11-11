@@ -12,7 +12,7 @@
 		<!-- <img id="logo" src= {{ url_for('static', filename='images/logo.png') }} /> -->
 		<img id="logo" src="https://is458.s3.amazonaws.com/logo.png" style="height:70px; width:70px"/>
 	</a>
-	<form>
+	<form action="{{url_for('search')}}">
 		<input id="searchBox" class="form-control" placeholder="Search" type="text" name="searchQuery">
 		<input id="searchButton" class="btn btn-outline-light" type="submit" value="Search">
 	</form>
@@ -25,9 +25,6 @@
 	<div class="dropdown">
 		<button class="dropbtn">Hello, <br>{{firstName}}</button>
 		<div class="dropdown-content">
-			<a href="/account/orders">Your orders</a>
-			<a href="/account/profile">Your profile</a>
-			<hr>
 			<a href="/logout">Sign Out</a>
 		</div>
 	</div>
