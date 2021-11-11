@@ -19,16 +19,28 @@ ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id=s3_secrets['access_id'],
-    aws_secret_access_key=s3_secrets['secret_access'],
+    aws_access_key_id=s3_secrets["access_key"],
+    aws_secret_access_key=s3_secrets["secret_access_key"],
 )
-
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id=ses_secrets['access_id'],
-    aws_secret_access_key=ses_secrets['secret_access'],
+    aws_access_key_id=ses_secrets["access_id"],
+    aws_secret_access_key=ses_secrets["access_secret"],
 )
+
+# s3 = boto3.client(
+#     "s3",
+#     aws_access_key_id='AKIA45COZBM2IR5UOVXO',
+#     aws_secret_access_key='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',
+# )
+
+# ses = boto3.client(
+#     "ses",
+#     region_name="us-east-1",
+#     aws_access_key_id='AKIA45COZBM2I5VQ5HJL',
+#     aws_secret_access_key='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',
+# )
 
 BUCKET_NAME = "keithprojectbucket"
 
@@ -215,8 +227,13 @@ def displayCategory():
             f"SELECT * from products where categoryId={categoryId}"
         )
     conn.close()
+
+    productData = productData.all()
     categoryName = data.all()[0][4]
 
+    print(productData)
+    print(categoryName)
+    
     return render_template(
         "displayCategory.html",
         productData=productData,
