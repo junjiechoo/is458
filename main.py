@@ -18,15 +18,15 @@ ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id='',
-    aws_secret_access_key='',
+    aws_access_key_id="",
+    aws_secret_access_key="",
 )
 print("This is SES", ses_secrets["access_id"], ses_secrets["access_secret"])
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id='',
-    aws_secret_access_key='',
+    aws_access_key_id="",
+    aws_secret_access_key="",
 )
 
 BUCKET_NAME = "keithprojectbucket"
@@ -159,7 +159,7 @@ def addItem():
                             {
                                 "subject": f"Successfully listed new item {name}",
                                 "body": f"New item {name} listed",
-                            }
+                            },
                         )
                     except:
                         msg = "error occurred"
@@ -455,16 +455,16 @@ def checkout():
 def checkoutSuccess():
     if "email" not in session:
         return redirect(url_for("loginForm"))
-    sendEmail(
-        "keithtan.2019@scis.smu.edu.sg",
-        session["email"],
-        {"subject": f"Your new order", "body": f"You've just wasted money"}
-    )
-    sendEmail(
-        "qilong.low.2019@scis.smu.edu.sg",
-        session['email'],
-        {"subject": f"New Order", "body": f"Pls prepare"}
-    )
+    # sendEmail(
+    #     "keithtan.2019@scis.smu.edu.sg",
+    #     session["email"],
+    #     {"subject": f"Your new order", "body": f"You've just wasted money"}
+    # )
+    # sendEmail(
+    #     "qilong.low.2019@scis.smu.edu.sg",
+    #     session['email'],
+    #     {"subject": f"New Order", "body": f"Pls prepare"}
+    # )
     return f"You've just wasted money"
 
 
@@ -539,16 +539,19 @@ def allowed_file(filename):
 #         ans.append(curr)
 #     return ans
 
+
 @app.route("/admin/analytics")
 def viewAnalytics():
     with engine.connect() as conn:
         productId = 0
-        product = conn.execute(f'SELECT * FROM salesperformance WHERE productName = {productId}')
+        product = conn.execute(
+            f"SELECT * FROM salesperformance WHERE productName = {productId}"
+        )
         product = product.all()[0]
-        users = conn.execute(f'SELECT COUNT(DISTINCT userID) from users')
+        users = conn.execute(f"SELECT COUNT(DISTINCT userID) from users")
         users = users.all()[0]
     conn.close()
-    return render_template("analytics.html", data=product, users = users)
+    return render_template("analytics.html", data=product, users=users)
 
 
 if __name__ == "__main__":
