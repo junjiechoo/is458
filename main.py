@@ -532,5 +532,17 @@ def allowed_file(filename):
 #         ans.append(curr)
 #     return ans
 
+@app.route("/admin/analytics")
+def viewAnalytics():
+    with engine.connect() as conn:
+        productId = 0
+        product = conn.execute(f'SELECT * FROM salesperformance WHERE productName = {productId}')
+        product = product.all()[0]
+        users = conn.execute(f'SELECT COUNT(DISTINCT userID) from users')
+        users = users.all()[0]
+    conn.close()
+    return render_template("analytics.html", data=product, users = users)
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", debug=True)
