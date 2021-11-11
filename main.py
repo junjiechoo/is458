@@ -18,15 +18,15 @@ ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id="",
-    aws_secret_access_key="",
+    aws_access_key_id=s3_secrets["access_key"],
+    aws_secret_access_key=s3_secrets["secret_access_key"],
 )
-print("This is SES", ses_secrets["access_id"], ses_secrets["access_secret"])
+
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id="",
-    aws_secret_access_key="",
+    aws_access_key_id=ses_secrets["access_id"],
+    aws_secret_access_key=ses_secrets["access_secret"],
 )
 
 BUCKET_NAME = "keithprojectbucket"
@@ -555,4 +555,4 @@ def viewAnalytics():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0",debug=True)
