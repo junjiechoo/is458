@@ -43,6 +43,35 @@
           value="Search"
         />
       </form>
+      {% if not loggedIn %}
+      <div id="signInButton">
+        <a href="/loginForm"
+          ><button
+            type="button"
+            href="/loginForm"
+            class="btn btn-outline-light"
+          >
+            Sign In
+          </button></a
+        >
+      </div>
+      {% else %}
+      <div class="dropdown">
+        <button class="dropbtn">Hello, <br />{{firstName}}</button>
+        <div class="dropdown-content">
+          <a href="/account/orders">Your orders</a>
+          <a href="/account/profile">Your profile</a>
+          <hr />
+          <a href="/logout">Sign Out</a>
+        </div>
+      </div>
+      {% endif %}
+      <div id="kart">
+        <a class="kartlink" href="/cart">
+          <img src={{url_for('static', filename='images/shoppingCart.png')}}
+          id="cartIcon" /> CART {{noOfItems}}
+        </a>
+      </div>
     </nav>
 
     <section id="products" class="container">
