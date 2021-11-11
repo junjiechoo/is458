@@ -29,22 +29,8 @@ ses = boto3.client(
     aws_secret_access_key=ses_secrets["access_secret"],
 )
 
-# s3 = boto3.client(
-#     "s3",
-#     aws_access_key_id='AKIA45COZBM2IR5UOVXO',
-#     aws_secret_access_key='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',
-# )
-
-# ses = boto3.client(
-#     "ses",
-#     region_name="us-east-1",
-#     aws_access_key_id='AKIA45COZBM2I5VQ5HJL',
-#     aws_secret_access_key='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',
-# )
-
 BUCKET_NAME = "keithprojectbucket"
 
-# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
 secrets_dict = get_secret("RDS_MYSQL_CME_Credentials")
 engine = create_engine(
     f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
@@ -575,4 +561,4 @@ def viewAnalytics():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)
