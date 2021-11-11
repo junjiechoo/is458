@@ -18,15 +18,15 @@ ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id=s3_secrets["access_key"],
-    aws_secret_access_key=s3_secrets["secret_access_key"],
+    aws_access_key_id='',
+    aws_secret_access_key='',
 )
 
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id=ses_secrets["access_id"],
-    aws_secret_access_key=ses_secrets["access_secret"],
+    aws_access_key_id='',
+    aws_secret_access_key='',
 )
 
 BUCKET_NAME = "keithprojectbucket"
@@ -62,9 +62,9 @@ def getLoginDetails():
     return (loggedIn, firstName, noOfItems)
 
 
-def sendEmail(des, content):
+def sendEmail(fro, des, content):
     response = ses.send_email(
-        Source="keithtan.2019@scis.smu.edu.sg",
+        Source=fro,
         Destination={"ToAddresses": [str(des)]},
         Message={
             "Subject": {
@@ -154,11 +154,12 @@ def addItem():
                         )
                         msg = "added successfully"
                         sendEmail(
+                            "qilong.low.2019@scis.smu.edu.sg",
                             session["email"],
                             {
                                 "subject": f"Successfully listed new item {name}",
                                 "body": f"New item {name} listed",
-                            },
+                            }
                         )
                     except:
                         msg = "error occurred"
@@ -198,7 +199,7 @@ def removeItem():
             msg = "Error occurred"
     conn.close()
     print(msg)
-    return redirect(url_for("cart"))
+    return redirect(url_for("root"))
 
 
 @app.route("/displayCategory")
@@ -419,7 +420,7 @@ def removeFromCart():
         except:
             msg = "error occurred"
     conn.close()
-    return redirect(url_for("root"))
+    return redirect(url_for("cart"))
 
 
 @app.route("/checkout")
@@ -455,8 +456,14 @@ def checkoutSuccess():
     if "email" not in session:
         return redirect(url_for("loginForm"))
     sendEmail(
+        "keithtan.2019@scis.smu.edu.sg",
         session["email"],
-        {"subject": f"Your new order", "body": f"You've just wasted money"},
+        {"subject": f"Your new order", "body": f"You've just wasted money"}
+    )
+    sendEmail(
+        "qilong.low.2019@scis.smu.edu.sg",
+        session['email'],
+        {"subject": f"New Order", "body": f"Pls prepare"}
     )
     return f"You've just wasted money"
 
@@ -545,4 +552,4 @@ def viewAnalytics():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    app.run(debug=True)
