@@ -1,90 +1,128 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
-<head>
-<title>Product Description</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='./css/home.css') }}" />
-<link rel="stylesheet" href="{{ url_for('static', filename='./css/topStyle.css') }}" />
-<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-</head>
-<body>
-<nav class="navbar navbar-light" style="background-color: #00a23b;">
-	<a href="/">
-		<!-- <img id="logo" src= {{ url_for('static', filename='images/logo.png') }} /> -->
-		<img id="logo" src="https://is458.s3.amazonaws.com/logo.png" style="height:70px; width:70px"/>
-	</a>
-	<form>
-		<input id="searchBox" class="form-control" placeholder="Search" type="text" name="searchQuery">
-		<input id="searchButton" class="btn btn-outline-light" type="submit" value="Search">
-	</form>
+  <head>
+    <title>Product Description</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='./css/home.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='./css/topStyle.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <nav class="navbar navbar-light" style="background-color: #00a23b">
+      <a href="/">
+        <!-- <img id="logo" src= {{ url_for('static', filename='images/logo.png') }} /> -->
+        <img
+          id="logo"
+          src="https://is458.s3.amazonaws.com/logo.png"
+          style="height: 70px; width: 70px"
+        />
+      </a>
+      <form>
+        <input
+          id="searchBox"
+          class="form-control"
+          placeholder="Search"
+          type="text"
+          name="searchQuery"
+        />
+        <input
+          id="searchButton"
+          class="btn btn-outline-light"
+          type="submit"
+          value="Search"
+        />
+      </form>
 
-	{% if not loggedIn %}
-	<div id="signInButton">
-		<button type="button" href="/loginForm" class="btn btn-outline-light">Sign In</button>
-	</div>
-	{% else %}
-	<div class="dropdown">
-		<button class="dropbtn">Hello, <br>{{firstName}}</button>
-		<div class="dropdown-content">
-			<a href="/account/orders">Your orders</a>
-			<a href="/account/profile">Your profile</a>
-			<hr>
-			<a href="/logout">Sign Out</a>
-		</div>
-	</div>
-	{% endif %}
-	<div id="kart">
-		<a class="kartlink" href="/cart">
-			<img src={{url_for('static', filename='images/shoppingCart.png')}} id="cartIcon" />
-			CART {{noOfItems}}
-		</a>
-	</div>
-</nav>
+      {% if not loggedIn %}
+      <div id="signInButton">
+        <button type="button" href="/loginForm" class="btn btn-outline-light">
+          Sign In
+        </button>
+      </div>
+      {% else %}
+      <div class="dropdown">
+        <button class="dropbtn">Hello, <br />{{firstName}}</button>
+        <div class="dropdown-content">
+          <a href="/account/orders">Your orders</a>
+          <a href="/account/profile">Your profile</a>
+          <hr />
+          <a href="/logout">Sign Out</a>
+        </div>
+      </div>
+      {% endif %}
+      <div id="kart">
+        <a class="kartlink" href="/cart">
+          <img src={{url_for('static', filename='images/shoppingCart.png')}}
+          id="cartIcon" /> CART {{noOfItems}}
+        </a>
+      </div>
+    </nav>
 
+    <section id="product" class="container mt-5 shadow p-5">
+      <div class="row">
+        <div class="col-6">
+          {% if data[4] == None %}
+          <img
+            src="https://keithprojectbucket.s3.amazonaws.com/CME/no_image.jpg"
+          />
+          {% else %}
+          <img
+            src="https://keithprojectbucket.s3.amazonaws.com/CME/{{data[4]}}"
+          />
+          {% endif %}
+        </div>
+        <div class="col-6 d-flex flex-column justify-content-center align-items-center">
+          <h2 class="mt-3">{{data[1]}}</h2>
 
-<div id="display">
-	<div style="margin-left: 5%; margin-top: 3%;">
-		<h1>{{data[1]}}</h1>
-	</div>
-	<div style="margin-left:5%">
-		<p>
-			{% if data[4] == None %}
-				<td><img src="https://keithprojectbucket.s3.amazonaws.com/CME/no_image.jpg"></td>
-			{% else %}
-				<td><img src="https://keithprojectbucket.s3.amazonaws.com/CME/{{data[4]}}" ></td>
-			{% endif %}
-		</p>
-	</div>
+          <table id="descriptionTable" class="mt-3">
+            <tr>
+              <th>Price: </th>
+              <td>${{data[2]}}</td>
+            </tr>
+            <tr>
+              <th>Stock: </th>
+              <td>{{data[5]}}</td>
+            </tr>
+            <tr>
+              <th>Description: </th>
+              <td>{{data[3]}}</td>
+            </tr>
+          </table>
+          <div id="addToCart" class="mt-5">
+            <a
+              href="/addToCart?productId={{request.args.get('productId')}}"
+              class="btn btn-success"
+              >Add to Cart</a
+            >
+          </div>
+        </div>
+      </div>
+    </section>
 
-	<div id="productDescription" style="margin-left:5%">
-		<h2>Details</h2>
-		<table id="descriptionTable" >
-			<tr>
-				<th>Name:	</th>
-				<td>{{data[1]}}</td>
-			</tr>
-			<tr>
-				<th>Price:	</th>
-				<td>${{data[2]}}</td>
-			</tr>
-			<tr>
-				<th>Stock:	</th>
-				<td>{{data[5]}}</td>
-			</tr>
-			<tr>
-				<th>Description:	</th>
-				<td>{{data[3]}}</td>
-			</tr>
-		</table>
-	</div>
-	<div id="addToCart" style="margin-left:5%; margin-bottom: 5%;">
-		<a href="/addToCart?productId={{request.args.get('productId')}}" class="btn btn-success">Add to Cart</a>
-	</div>
-</div>
-
-
-<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-</body>
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+  </body>
 </html>
-
