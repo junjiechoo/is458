@@ -198,7 +198,7 @@ def removeItem():
             msg = "Error occurred"
     conn.close()
     print(msg)
-    return redirect(url_for("root"))
+    return redirect(url_for("cart"))
 
 
 @app.route("/displayCategory")
