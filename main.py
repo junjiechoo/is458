@@ -21,7 +21,7 @@ s3 = boto3.client(
     aws_access_key_id='',
     aws_secret_access_key='',
 )
-
+print("This is SES", ses_secrets["access_id"], ses_secrets["access_secret"])
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
