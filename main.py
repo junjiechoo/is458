@@ -14,29 +14,29 @@ app.secret_key = "random string"
 UPLOAD_FOLDER = "static/uploads"
 ALLOWED_EXTENSIONS = set(["jpeg", "jpg", "png", "gif"])
 
-# s3_secrets = get_secret("S3_CME_Credentials")
-# ses_secrets = get_secret("SES_CME_Credentials")
+s3_secrets = get_secret("S3_CME_Credentials")
+ses_secrets = get_secret("SES_CME_Credentials")
 
 s3 = boto3.client(
     "s3",
-    aws_access_key_id='AKIA45COZBM2IR5UOVXO',
-    aws_secret_access_key='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',
+    aws_access_key_id=s3_secrets['access_id'],
+    aws_secret_access_key=s3_secrets['secret_access'],
 )
 
 ses = boto3.client(
     "ses",
     region_name="us-east-1",
-    aws_access_key_id='AKIA45COZBM2I5VQ5HJL',
-    aws_secret_access_key='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',
+    aws_access_key_id=ses_secrets['access_id'],
+    aws_secret_access_key=ses_secrets['secret_access'],
 )
 
 BUCKET_NAME = "keithprojectbucket"
 
-engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
-# secrets_dict = get_secret("RDS_MYSQL_CME_Credentials")
-# engine = create_engine(
-#     f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
-# )
+# engine = create_engine('mysql+mysqldb://cme_database:ilovecme@cme-database.cpufpabpntvq.us-east-1.rds.amazonaws.com:3306/cme_database')
+secrets_dict = get_secret("RDS_MYSQL_CME_Credentials")
+engine = create_engine(
+    f"mysql+mysqldb://{secrets_dict['username']}:{secrets_dict['password']}@{secrets_dict['host']}:{secrets_dict['port']}/{secrets_dict['database']}"
+)
 
 
 def getLoginDetails():
